@@ -13,8 +13,8 @@ const HomePricing = () => {
         <section id="pricing" className="py-24 bg-gray-100">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div className="text-center mb-12">
-                    <h2 className="text-3xl font-bold mb-4">Simple, Transparent Pricing</h2>
-                    <p className="text-gray-600 text-lg">Choose the plan that&#39;s right for your business (IT&#39;S PLACEHOLDER NO PRICING FOR THIS TEMPLATE)</p>
+                    <h2 className="text-3xl font-bold mb-4">Devenez premium !</h2>
+                    <p className="text-gray-600 text-lg">Améliorez votre éxpérience et profitez pleinement de votre compagnon IA</p>
                 </div>
 
                 <div className="grid md:grid-cols-3 gap-8 mb-12">
