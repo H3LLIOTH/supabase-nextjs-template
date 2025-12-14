@@ -1,9 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createClient } from "@/lib/supabase/client";
+import { createSPAClient } from "@/lib/supabase/client";
 
-const supabase = createClient();
+const supabase = createSPAClient();
 
 
 type Avatar = {
