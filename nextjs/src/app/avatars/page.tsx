@@ -105,7 +105,7 @@ const handleCreateAvatar = async (e: React.FormEvent) => {
 
   const { data, error } = await supabase
     .from("avatars" as unknown as "avatars")
-    .insert([avatarToInsert as unknown])
+    .insert([avatarToInsert] as never[])
     .select()
     .single();
 
