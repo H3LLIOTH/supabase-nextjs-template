@@ -85,7 +85,7 @@ export default function MesAvatarsPage() {
     }
 
     const { data, error } = await supabase
-      .from("avatars")
+      .from("avatars" as any)
       .insert([
         {
           user_id: user.id,
