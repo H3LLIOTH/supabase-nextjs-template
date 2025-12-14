@@ -75,37 +75,48 @@ export default function MesAvatarsPage() {
     fetchAvatars();
   }, []);
 
-  const handleCreateAvatar = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+const handleCreateAvatar = async (e: React.FormEvent) => {
+  e.preventDefault();
+  setError(null);
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+  const {
+    data: { user },
+    error: userError,
+  } = await supabase.auth.getUser();
 
-    if (userError || !user) {
-      setError("Tu dois être connecté pour créer un avatar.");
-      return;
-    }
+  if (userError || !user) {
+    setError("Tu dois être connecté pour créer un avatar.");
+    return;
+  }
 
-    if (!name.trim()) {
-      setError("Le nom de l'avatar est obligatoire.");
-      return;
-    }
+  if (!name.trim()) {
+    setError("Le nom de l'avatar est obligatoire.");
+    return;
+  }
+  
+  // 👇 ICI on prépare les données à insérer
+  const avatarToInsert: AvatarInsert = {
+    user_id: user.id,
+    name,
+    style: style || null,
+    hair_color: hairColor || null,
+    eye_color: eyeColor || null,
+    personality: personality || null,
+  };
 
-    const { data, error } = await supabase
-      .from("avatars" as unknown as "avatars")
-      .insert<AvatarInsert>([
-        {
-          user_id: user.id,
-          name,
-          style: style || null,
-          hair_color: hairColor || null,
-          eye_color: eyeColor || null,
-          personality: personality || null,
-        },
-      ])
+
+    // 👇 ICI on fait l'insert Supabase
+  const { data, error } = await supabase
+    .from("avatars" as unknown as "avatars")
+    .insert([avatarToInsert as unknown])
+    .select()
+    .single();
+
+  if (error) {
+    console.error(error);
+    setError("Erreur lors de la création de l’avatar.");
+    return;
+  }
       .select()
       .single();
 
