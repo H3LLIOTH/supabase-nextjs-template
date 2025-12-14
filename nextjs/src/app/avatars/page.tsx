@@ -93,8 +93,7 @@ const handleCreateAvatar = async (e: React.FormEvent) => {
     setError("Le nom de l'avatar est obligatoire.");
     return;
   }
-  
-  // 👇 ICI on prépare les données à insérer
+
   const avatarToInsert: AvatarInsert = {
     user_id: user.id,
     name,
@@ -104,8 +103,6 @@ const handleCreateAvatar = async (e: React.FormEvent) => {
     personality: personality || null,
   };
 
-
-    // 👇 ICI on fait l'insert Supabase
   const { data, error } = await supabase
     .from("avatars" as unknown as "avatars")
     .insert([avatarToInsert as unknown])
@@ -117,25 +114,16 @@ const handleCreateAvatar = async (e: React.FormEvent) => {
     setError("Erreur lors de la création de l’avatar.");
     return;
   }
-      .select()
-      .single();
 
-    if (error) {
-      console.error(error);
-      setError("Erreur lors de la création de l'avatar.");
-      return;
-    }
+  setAvatars((prev) => [data as Avatar, ...prev]);
 
-    // ajouter le nouvel avatar en haut de la liste
-    setAvatars((prev) => [data as Avatar, ...prev]);
+  setName("");
+  setStyle("");
+  setHairColor("");
+  setEyeColor("");
+  setPersonality("");
+};
 
-    // reset du formulaire
-    setName("");
-    setStyle("");
-    setHairColor("");
-    setEyeColor("");
-    setPersonality("");
-  };
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8">
