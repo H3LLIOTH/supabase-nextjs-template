@@ -1,9 +1,19 @@
 "use client";
 
+
 import { useEffect, useState } from "react";
 import { createSPAClient } from "@/lib/supabase/client";
 
 const supabase = createSPAClient();
+
+type AvatarInsert = {
+  user_id: string;
+  name: string;
+  style: string | null;
+  hair_color: string | null;
+  eye_color: string | null;
+  personality: string | null;
+};
 
 
 type Avatar = {
@@ -86,7 +96,7 @@ export default function MesAvatarsPage() {
 
     const { data, error } = await supabase
       .from("avatars" as unknown as "avatars")
-      .insert([
+      .insert<AvatarInsert>([
         {
           user_id: user.id,
           name,
