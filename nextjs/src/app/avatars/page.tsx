@@ -23,6 +23,7 @@ type Avatar = {
   hair_color: string | null;
   eye_color: string | null;
   personality: string | null;
+  image_url?: string | null;
 };
 
 export default function MesAvatarsPage() {
@@ -122,6 +123,27 @@ const handleCreateAvatar = async (e: React.FormEvent) => {
   setHairColor("");
   setEyeColor("");
   setPersonality("");
+};
+
+const generateImage = async (avatarId: string) => {
+  setError(null);
+
+  const res = await fetch("/api/generate-avatar-image", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ avatarId }),
+  });
+
+  const json = await res.json();
+  if (!res.ok) {
+    setError(json?.error ?? "Erreur génération");
+    return;
+  }
+
+  // Met à jour l’état local pour afficher l’image direct
+  setAvatars((prev) =>
+    prev.map((a) => (a.id === avatarId ? { ...a, image_url: json.imageUrl } : a))
+  );
 };
 
 
@@ -229,6 +251,21 @@ const handleCreateAvatar = async (e: React.FormEvent) => {
           <ul className="space-y-3">
             {avatars.map((avatar) => (
               <li
+                {avatar.image_url && (
+  <img
+    src={avatar.image_url}
+    alt={avatar.name}
+    className="mt-2 w-full max-w-sm rounded-lg border"
+  />
+)}
+
+<button
+  onClick={() => generateImage(avatar.id)}
+  className="mt-2 inline-flex items-center px-3 py-2 rounded-lg text-sm font-semibold border"
+>
+  Générer une image
+</button>
+
                 key={avatar.id}
                 className="border rounded-lg p-3 flex flex-col gap-1"
               >
