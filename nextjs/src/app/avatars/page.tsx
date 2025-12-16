@@ -1,6 +1,5 @@
 "use client";
 
-
 import { useEffect, useState } from "react";
 import { createSPAClient } from "@/lib/supabase/client";
 
@@ -14,7 +13,6 @@ type AvatarInsert = {
   eye_color: string | null;
   personality: string | null;
 };
-
 
 type Avatar = {
   id: string;
@@ -38,13 +36,12 @@ export default function MesAvatarsPage() {
   const [eyeColor, setEyeColor] = useState("");
   const [personality, setPersonality] = useState("");
 
-  // Charger les avatars de l'utilisateur connecté
+  // Charger les avatars
   useEffect(() => {
     const fetchAvatars = async () => {
       setLoading(true);
       setError(null);
 
-      // récupérer l'utilisateur connecté
       const {
         data: { user },
         error: userError,
@@ -56,7 +53,6 @@ export default function MesAvatarsPage() {
         return;
       }
 
-      // récupérer les avatars associés à cet utilisateur
       const { data, error } = await supabase
         .from("avatars")
         .select("*")
@@ -65,7 +61,7 @@ export default function MesAvatarsPage() {
 
       if (error) {
         console.error(error);
-        setError("Impossible de charger tes avatars pour le moment.");
+        setError("Impossible de charger tes avatars.");
       } else if (data) {
         setAvatars(data as Avatar[]);
       }
@@ -76,220 +72,168 @@ export default function MesAvatarsPage() {
     fetchAvatars();
   }, []);
 
-const handleCreateAvatar = async (e: React.FormEvent) => {
-  e.preventDefault();
-  setError(null);
+  const handleCreateAvatar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
 
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
 
-  if (userError || !user) {
-    setError("Tu dois être connecté pour créer un avatar.");
-    return;
-  }
+    if (userError || !user) {
+      setError("Tu dois être connecté pour créer un avatar.");
+      return;
+    }
 
-  if (!name.trim()) {
-    setError("Le nom de l'avatar est obligatoire.");
-    return;
-  }
+    if (!name.trim()) {
+      setError("Le nom de l'avatar est obligatoire.");
+      return;
+    }
 
-  const avatarToInsert: AvatarInsert = {
-    user_id: user.id,
-    name,
-    style: style || null,
-    hair_color: hairColor || null,
-    eye_color: eyeColor || null,
-    personality: personality || null,
+    const avatarToInsert: AvatarInsert = {
+      user_id: user.id,
+      name,
+      style: style || null,
+      hair_color: hairColor || null,
+      eye_color: eyeColor || null,
+      personality: personality || null,
+    };
+
+    const { data, error } = await supabase
+      .from("avatars" as unknown as "avatars")
+      .insert([avatarToInsert] as never[])
+      .select()
+      .single();
+
+    if (error) {
+      console.error(error);
+      setError("Erreur lors de la création de l’avatar.");
+      return;
+    }
+
+    setAvatars((prev) => [data as Avatar, ...prev]);
+
+    setName("");
+    setStyle("");
+    setHairColor("");
+    setEyeColor("");
+    setPersonality("");
   };
 
-  const { data, error } = await supabase
-    .from("avatars" as unknown as "avatars")
-    .insert([avatarToInsert] as never[])
-    .select()
-    .single();
+  const generateImage = async (avatarId: string) => {
+    setError(null);
 
-  if (error) {
-    console.error(error);
-    setError("Erreur lors de la création de l’avatar.");
-    return;
-  }
+    const res = await fetch("/api/generate-avatar-image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ avatarId }),
+    });
 
-  setAvatars((prev) => [data as Avatar, ...prev]);
+    const json = await res.json();
 
-  setName("");
-  setStyle("");
-  setHairColor("");
-  setEyeColor("");
-  setPersonality("");
-};
+    if (!res.ok) {
+      setError(json?.error ?? "Erreur génération");
+      return;
+    }
 
-const generateImage = async (avatarId: string) => {
-  setError(null);
-
-  const res = await fetch("/api/generate-avatar-image", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ avatarId }),
-  });
-
-  const json = await res.json();
-  if (!res.ok) {
-    setError(json?.error ?? "Erreur génération");
-    return;
-  }
-
-  // Met à jour l’état local pour afficher l’image direct
-  setAvatars((prev) =>
-    prev.map((a) => (a.id === avatarId ? { ...a, image_url: json.imageUrl } : a))
-  );
-};
-
+    setAvatars((prev) =>
+      prev.map((a) =>
+        a.id === avatarId ? { ...a, image_url: json.imageUrl } : a
+      )
+    );
+  };
 
   return (
     <main className="max-w-3xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-4">Mes avatars</h1>
-      <p className="text-gray-600 mb-6">
-        Crée et gère ici tes avatars IA. On commencera par la base : nom,
-        style, apparence et personnalité.
-      </p>
 
-      {/* Formulaire de création */}
-      <section className="mb-10 border rounded-xl p-4 md:p-6 shadow-sm">
-        <h2 className="text-xl font-semibold mb-3">Créer un nouvel avatar</h2>
-        {error && (
-          <p className="text-sm text-red-500 mb-3">
-            {error}
-          </p>
-        )}
+      {/* Formulaire */}
+      <section className="mb-10 border rounded-xl p-4 shadow-sm">
+        <h2 className="text-xl font-semibold mb-3">Créer un avatar</h2>
+
+        {error && <p className="text-sm text-red-500 mb-3">{error}</p>}
+
         <form onSubmit={handleCreateAvatar} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Nom de l&apos;avatar *
-            </label>
-            <input
-              className="w-full border rounded-lg px-3 py-2 text-sm"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Ex : Luna, Alex, Nova..."
-            />
-          </div>
+          <input
+            className="w-full border rounded-lg px-3 py-2 text-sm"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Nom"
+          />
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Style visuel
-              </label>
-              <input
-                className="w-full border rounded-lg px-3 py-2 text-sm"
-                value={style}
-                onChange={(e) => setStyle(e.target.value)}
-                placeholder="Ex : réaliste, anime, cartoon..."
-              />
-            </div>
+          <input
+            className="w-full border rounded-lg px-3 py-2 text-sm"
+            value={style}
+            onChange={(e) => setStyle(e.target.value)}
+            placeholder="Style"
+          />
 
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Couleur de cheveux
-              </label>
-              <input
-                className="w-full border rounded-lg px-3 py-2 text-sm"
-                value={hairColor}
-                onChange={(e) => setHairColor(e.target.value)}
-                placeholder="Ex : bruns, blonds, roux..."
-              />
-            </div>
+          <input
+            className="w-full border rounded-lg px-3 py-2 text-sm"
+            value={hairColor}
+            onChange={(e) => setHairColor(e.target.value)}
+            placeholder="Cheveux"
+          />
 
-            <div>
-              <label className="block text-sm font-medium mb-1">
-                Couleur des yeux
-              </label>
-              <input
-                className="w-full border rounded-lg px-3 py-2 text-sm"
-                value={eyeColor}
-                onChange={(e) => setEyeColor(e.target.value)}
-                placeholder="Ex : verts, bleus, noisette..."
-              />
-            </div>
-          </div>
+          <input
+            className="w-full border rounded-lg px-3 py-2 text-sm"
+            value={eyeColor}
+            onChange={(e) => setEyeColor(e.target.value)}
+            placeholder="Yeux"
+          />
 
-          <div>
-            <label className="block text-sm font-medium mb-1">
-              Personnalité (facultatif)
-            </label>
-            <textarea
-              className="w-full border rounded-lg px-3 py-2 text-sm"
-              rows={3}
-              value={personality}
-              onChange={(e) => setPersonality(e.target.value)}
-              placeholder="Ex : douce, joueuse, curieuse, protectrice…"
-            />
-          </div>
+          <textarea
+            className="w-full border rounded-lg px-3 py-2 text-sm"
+            rows={3}
+            value={personality}
+            onChange={(e) => setPersonality(e.target.value)}
+            placeholder="Personnalité"
+          />
 
           <button
             type="submit"
-            className="inline-flex items-center px-4 py-2 rounded-lg text-sm font-semibold border bg-black text-white hover:opacity-90"
+            className="px-4 py-2 rounded-lg text-sm font-semibold bg-black text-white"
           >
-            Créer l&apos;avatar
+            Créer l’avatar
           </button>
         </form>
       </section>
 
-      {/* Liste des avatars */}
+      {/* Liste */}
       <section>
         <h2 className="text-xl font-semibold mb-3">Tes avatars</h2>
 
         {loading ? (
-          <p>Chargement de tes avatars...</p>
-        ) : avatars.length === 0 ? (
-          <p className="text-gray-500">
-            Tu n&apos;as encore aucun avatar. Crée-en un avec le formulaire
-            ci-dessus.
-          </p>
+          <p>Chargement...</p>
         ) : (
           <ul className="space-y-3">
             {avatars.map((avatar) => (
               <li
-                {avatar.image_url && (
-  <img
-    src={avatar.image_url}
-    alt={avatar.name}
-    className="mt-2 w-full max-w-sm rounded-lg border"
-  />
-)}
-
-<button
-  onClick={() => generateImage(avatar.id)}
-  className="mt-2 inline-flex items-center px-3 py-2 rounded-lg text-sm font-semibold border"
->
-  Générer une image
-</button>
-
                 key={avatar.id}
                 className="border rounded-lg p-3 flex flex-col gap-1"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-semibold">{avatar.name}</span>
-                  {avatar.style && (
-                    <span className="text-xs px-2 py-1 rounded-full border">
-                      {avatar.style}
-                    </span>
-                  )}
-                </div>
-                <div className="text-xs text-gray-600">
-                  {avatar.hair_color && (
-                    <span>Cheveux : {avatar.hair_color} · </span>
-                  )}
-                  {avatar.eye_color && (
-                    <span>Yeux : {avatar.eye_color}</span>
-                  )}
-                </div>
+                <strong>{avatar.name}</strong>
+
                 {avatar.personality && (
-                  <p className="text-sm text-gray-700 mt-1">
-                    {avatar.personality}
-                  </p>
+                  <p className="text-sm">{avatar.personality}</p>
                 )}
+
+                {avatar.image_url && (
+                  <img
+                    src={avatar.image_url}
+                    alt={avatar.name}
+                    className="mt-2 w-full max-w-sm rounded-lg border"
+                  />
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => generateImage(avatar.id)}
+                  className="mt-2 px-3 py-2 rounded-lg text-sm border"
+                >
+                  Générer une image
+                </button>
               </li>
             ))}
           </ul>
